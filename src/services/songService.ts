@@ -2,14 +2,51 @@
 import { supabase } from "@/lib/supabase";
 import { Song } from "@/contexts/PlayerContext";
 
+export const ensureUserProfile = async (userId: string, email: string, name: string): Promise<void> => {
+  // Check if the user already exists in the users table
+  const { data, error } = await supabase
+    .from('users')
+    .select()
+    .eq('id', userId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
+    console.error("Error checking user profile:", error);
+    throw new Error(`Error checking user profile: ${error.message}`);
+  }
+
+  // If user doesn't exist, create the profile
+  if (!data) {
+    const { error: insertError } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        name: name || 'User',
+        email: email || '',
+      });
+
+    if (insertError) {
+      console.error("Error creating user profile:", insertError);
+      throw new Error(`Error creating user profile: ${insertError.message}`);
+    }
+
+    console.log("User profile created successfully");
+  }
+};
+
 export const uploadSong = async (
   title: string,
   artist: string,
   album: string,
   audioFile: File,
   coverArtFile: File,
-  userId: string
+  userId: string,
+  userEmail: string = '',
+  userName: string = ''
 ): Promise<Song> => {
+  // Ensure user profile exists before proceeding
+  await ensureUserProfile(userId, userEmail, userName);
+
   // Upload audio file
   const audioFileName = `${userId}/${Date.now()}-${audioFile.name}`;
   const { data: audioData, error: audioError } = await supabase.storage

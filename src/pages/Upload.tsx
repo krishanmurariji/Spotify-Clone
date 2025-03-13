@@ -84,14 +84,16 @@ const Upload = () => {
     setIsLoading(true);
     
     try {
-      // Upload song to Supabase
+      // Upload song to Supabase with user profile info
       const newSong = await uploadSong(
         title,
         artist,
         album,
         audioFile,
         coverArtFile,
-        user.id
+        user.id,
+        user.email,
+        user.name
       );
       
       // Add song to player context
