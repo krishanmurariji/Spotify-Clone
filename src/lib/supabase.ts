@@ -1,17 +1,14 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// For Lovable, get the project ID from the config.toml file
+const projectId = 'ttgtiwvfxsvvugixzial';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-}
+// Set the Supabase URL and anon key directly
+const supabaseUrl = `https://${projectId}.supabase.co`;
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z3Rpd3ZmeHN2dnVnaXh6aWFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE4NDQzNzUsImV4cCI6MjA1NzQyMDM3NX0.5VoQrPYJSTm8Ve00p_tY4Z0vPemfHrrLVPCCVRZYOMk';
 
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Tables = {
   users: {
