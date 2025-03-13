@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 type User = {
   id: string;
@@ -18,16 +20,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data for demonstration
-const MOCK_USERS = [
-  {
-    id: "1",
-    name: "Demo User",
-    email: "demo@example.com",
-    password: "password123"
-  }
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
@@ -35,84 +27,177 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for saved user in localStorage
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Check for an active session when the app loads
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error("Error fetching session:", error);
+        return;
+      }
+      
+      if (data?.session) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('name, email')
+          .eq('id', data.session.user.id)
+          .single();
+        
+        if (userData) {
+          setUser({
+            id: data.session.user.id,
+            name: userData.name,
+            email: data.session.user.email || '',
+          });
+        }
+      }
+    };
+    
+    fetchSession();
+    
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('name, email')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (userData) {
+            setUser({
+              id: session.user.id,
+              name: userData.name,
+              email: session.user.email || '',
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        const foundUser = MOCK_USERS.find(
-          u => u.email === email && u.password === password
-        );
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: error.message,
+        });
+        throw error;
+      }
+      
+      if (data.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', data.user.id)
+          .single();
         
-        if (foundUser) {
-          const { password, ...userWithoutPassword } = foundUser;
-          setUser(userWithoutPassword);
-          localStorage.setItem("user", JSON.stringify(userWithoutPassword));
-          toast({
-            title: "Logged in successfully",
-            description: `Welcome back, ${foundUser.name}!`,
-          });
-          resolve();
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Login failed",
-            description: "Invalid email or password",
-          });
-          reject(new Error("Invalid credentials"));
-        }
-      }, 1000);
-    });
+        setUser({
+          id: data.user.id,
+          name: userData?.name || 'User',
+          email: data.user.email || '',
+        });
+        
+        toast({
+          title: "Logged in successfully",
+          description: `Welcome back, ${userData?.name || 'User'}!`,
+        });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        if (MOCK_USERS.some(u => u.email === email)) {
+    try {
+      // Register the user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Signup failed",
+          description: error.message,
+        });
+        throw error;
+      }
+      
+      if (data.user) {
+        // Insert additional user data into your users table
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            name,
+            email,
+          });
+        
+        if (profileError) {
           toast({
             variant: "destructive",
-            title: "Signup failed",
-            description: "Email already in use",
+            title: "Profile creation failed",
+            description: profileError.message,
           });
-          reject(new Error("Email already in use"));
-          return;
+          throw profileError;
         }
         
-        const newUser = {
-          id: String(MOCK_USERS.length + 1),
+        setUser({
+          id: data.user.id,
           name,
           email,
-          password
-        };
-        
-        MOCK_USERS.push(newUser);
-        const { password: _, ...userWithoutPassword } = newUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem("user", JSON.stringify(userWithoutPassword));
+        });
         
         toast({
           title: "Account created",
           description: "Your account has been created successfully!",
         });
-        resolve();
-      }, 1000);
-    });
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-    });
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Logout failed",
+          description: error.message,
+        });
+        throw error;
+      }
+      
+      setUser(null);
+      
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   return (

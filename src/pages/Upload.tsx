@@ -4,14 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { usePlayer, Song } from "@/contexts/PlayerContext";
+import { usePlayer } from "@/contexts/PlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
-import { Upload as UploadIcon } from "lucide-react";
+import { Upload as UploadIcon, Loader2 } from "lucide-react";
+import { uploadSong } from "@/services/songService";
 
 const Upload = () => {
   const [title, setTitle] = useState("");
@@ -22,10 +22,22 @@ const Upload = () => {
   const [coverArtPreview, setCoverArtPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { addSong } = usePlayer();
-  const { user } = useAuth();
+  const { addSong, refreshSongs } = usePlayer();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You need to log in to upload songs",
+      });
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate, toast]);
 
   const handleCoverArtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -50,6 +62,16 @@ const Upload = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You need to log in to upload songs",
+      });
+      navigate("/login");
+      return;
+    }
+    
     if (!title || !artist || !album || !audioFile || !coverArtFile) {
       toast({
         variant: "destructive",
@@ -62,23 +84,17 @@ const Upload = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, you would upload files to a backend here
-      // Since we're mocking, we'll create object URLs for the files
-      const audioUrl = URL.createObjectURL(audioFile);
-      // Using the preview we already created for cover art
-      const coverArt = coverArtPreview as string;
-      
-      const newSong: Song = {
-        id: `user-${Date.now()}`,
+      // Upload song to Supabase
+      const newSong = await uploadSong(
         title,
         artist,
         album,
-        coverArt,
-        audioUrl,
-        duration: 180, // Default duration as we can't easily determine it
-        uploadedBy: user?.id
-      };
+        audioFile,
+        coverArtFile,
+        user.id
+      );
       
+      // Add song to player context
       addSong(newSong);
       
       toast({
@@ -94,13 +110,14 @@ const Upload = () => {
       setCoverArtFile(null);
       setCoverArtPreview(null);
       
+      // Navigate to library
       navigate("/library");
     } catch (error) {
       console.error("Upload error:", error);
       toast({
         variant: "destructive",
         title: "Upload Failed",
-        description: "There was an error uploading your song. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error uploading your song. Please try again.",
       });
     } finally {
       setIsLoading(false);

@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import { fetchAllSongs } from "@/services/songService";
+import { useToast } from "@/hooks/use-toast";
 
 export type Song = {
   id: string;
@@ -26,52 +28,47 @@ type PlayerContextType = {
   previous: () => void;
   songsList: Song[];
   addSong: (song: Song) => void;
+  loadingSongs: boolean;
+  refreshSongs: () => Promise<void>;
 };
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
-// Mock songs data
-const MOCK_SONGS: Song[] = [
-  {
-    id: "1",
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    album: "After Hours",
-    coverArt: "https://images.pexels.com/photos/1699161/pexels-photo-1699161.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    duration: 200,
-  },
-  {
-    id: "2",
-    title: "Save Your Tears",
-    artist: "The Weeknd",
-    album: "After Hours",
-    coverArt: "https://images.pexels.com/photos/1671163/pexels-photo-1671163.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-    duration: 180,
-  },
-  {
-    id: "3",
-    title: "Dance Monkey",
-    artist: "Tones and I",
-    album: "The Kids Are Coming",
-    coverArt: "https://images.pexels.com/photos/1370545/pexels-photo-1370545.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-    duration: 210,
-  },
-];
-
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
-  const [songsList, setSongsList] = useState<Song[]>(MOCK_SONGS);
+  const [songsList, setSongsList] = useState<Song[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(0.7);
+  const [loadingSongs, setLoadingSongs] = useState(true);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const { toast } = useToast();
+
+  // Load songs from Supabase on initial render
+  useEffect(() => {
+    refreshSongs();
+  }, []);
+
+  const refreshSongs = async () => {
+    setLoadingSongs(true);
+    try {
+      const songs = await fetchAllSongs();
+      setSongsList(songs);
+    } catch (error) {
+      console.error("Error fetching songs:", error);
+      toast({
+        variant: "destructive",
+        title: "Error loading songs",
+        description: "Could not load songs from the server",
+      });
+    } finally {
+      setLoadingSongs(false);
+    }
+  };
 
   useEffect(() => {
     if (audioRef.current) {
@@ -120,7 +117,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
     if (audioRef.current) {
       audioRef.current.src = song.audioUrl;
       audioRef.current.oncanplaythrough = () => {
-        audioRef.current?.play();
+        audioRef.current?.play()
+          .catch(error => {
+            console.error("Error playing audio:", error);
+            toast({
+              variant: "destructive",
+              title: "Playback Error",
+              description: "Could not play this song. Please try again.",
+            });
+          });
         setIsPlaying(true);
         startProgressTimer();
       };
@@ -129,7 +134,15 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
       const audio = new Audio(song.audioUrl);
       audio.volume = volume;
       audio.oncanplaythrough = () => {
-        audio.play();
+        audio.play()
+          .catch(error => {
+            console.error("Error playing audio:", error);
+            toast({
+              variant: "destructive",
+              title: "Playback Error",
+              description: "Could not play this song. Please try again.",
+            });
+          });
         setIsPlaying(true);
         startProgressTimer();
       };
@@ -200,7 +213,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const addSong = (song: Song) => {
-    setSongsList(prev => [...prev, song]);
+    setSongsList(prev => [song, ...prev]);
   };
 
   return (
@@ -210,6 +223,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
         isPlaying,
         progress,
         volume,
+        loadingSongs,
         play,
         pause,
         resume,
@@ -218,7 +232,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
         next,
         previous,
         songsList,
-        addSong
+        addSong,
+        refreshSongs
       }}
     >
       {children}

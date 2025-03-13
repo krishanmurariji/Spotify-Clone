@@ -1,22 +1,47 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
 import { usePlayer, Song } from "@/contexts/PlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlayCircle, Pause, Clock, Music } from "lucide-react";
+import { PlayCircle, Pause, Clock, Music, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { fetchUserSongs } from "@/services/songService";
+import { useToast } from "@/hooks/use-toast";
 
 const Library = () => {
   const { songsList, currentSong, isPlaying, play, pause, resume } = usePlayer();
   const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
   
-  // Filter songs uploaded by current user (if authenticated)
-  const userSongs = isAuthenticated
-    ? songsList.filter(song => song.uploadedBy === user?.id)
-    : [];
+  const [userSongs, setUserSongs] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Load user's songs when authenticated
+  useEffect(() => {
+    const loadUserSongs = async () => {
+      if (isAuthenticated && user) {
+        setLoading(true);
+        try {
+          const songs = await fetchUserSongs(user.id);
+          setUserSongs(songs);
+        } catch (error) {
+          console.error("Error fetching user songs:", error);
+          toast({
+            variant: "destructive",
+            title: "Error loading songs",
+            description: "Could not load your songs from the server",
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    loadUserSongs();
+  }, [isAuthenticated, user, toast]);
     
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -54,7 +79,11 @@ const Library = () => {
                   </Link>
                 </div>
                 
-                {userSongs.length === 0 ? (
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-spotify" />
+                  </div>
+                ) : userSongs.length === 0 ? (
                   <div className="bg-neutral-900/50 rounded-lg p-8 text-center">
                     <Music size={48} className="mx-auto mb-4 text-neutral-400" />
                     <h3 className="text-xl font-medium mb-2">No uploaded songs yet</h3>
