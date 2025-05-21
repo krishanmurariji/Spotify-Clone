@@ -1,69 +1,76 @@
-# Welcome to your Lovable project
+# 🎧 Welcome to Your Lovable Project – A Personalized Spotify Clone
 
-## Project info
+🔗 **Live Demo**: [Lovable Spotify Clone](https://lovable.dev/projects/20f571a9-fa51-426a-91f0-bdfdfe7cde79)
 
-**URL**: https://lovable.dev/projects/20f571a9-fa51-426a-91f0-bdfdfe7cde79
+This project is a **Spotify-inspired music application** where users can **upload their own songs** and **listen anytime, anywhere**. It’s more than a clone – it gives **control back to the user** with a modern interface, seamless playback, and personal music management.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 Features
 
-**Use Lovable**
+- 🎵 Upload and play your own songs
+- 🔍 Search and filter through your music
+- 🎧 Seamless playback experience
+- ⚡ Fast and responsive UI
+- 🌓 Dark mode support
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/20f571a9-fa51-426a-91f0-bdfdfe7cde79) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Built With
 
-**Use your preferred IDE**
+- **Vite**
+- **TypeScript**
+- **React**
+- **shadcn/ui**
+- **Tailwind CSS**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## ✨ Author: Krishan Murari
 
-Follow these steps:
+👋 Welcome to [Krishan Murari's](https://krishanmurari.live/) profile!  
+<a href="https://krishanmurari.live/"><img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="25px"></a>
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+Connect with me on:
+
+<a href="https://www.linkedin.com/in/krishan-murari/" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/linked-in-alt.svg" alt="LinkedIn" height="30" width="40" /></a>
+&nbsp;
+<a href="https://twitter.com/KrishanMuraari" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/twitter.svg" alt="Twitter" height="30" width="40" /></a>
+&nbsp;
+<a href="https://www.instagram.com/krishanmurariji/" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/instagram.svg" alt="Instagram" height="30" width="40" /></a>
+&nbsp;
+<a href="https://www.youtube.com/@Decode-And-discover" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/youtube.svg" alt="YouTube" height="30" width="40" /></a>
+&nbsp;
+<a href="https://github.com/krishanmurariji" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/github.svg" alt="GitHub" height="30" width="40" /></a>
+&nbsp;
+<a href="https://leetcode.com/Krishanmurariji/" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/leet-code.svg" alt="LeetCode" height="30" width="40" /></a>
+
+---
+
+## 👨‍💻 About Me
+
+- 🔭 I’m currently working on JavaScript and React projects  
+- 🌱 I’m learning Data Structures, Algorithms, and modern web development tools  
+- ✍ I’m a Web Developer, Designer, Teacher & Student  
+- 🎭 I also enjoy poetry, movies, and tech exploration  
+
+---
+
+## 🧩 How to Run This Project Locally
+
+Make sure you have **Node.js & npm** installed. We recommend installing via [nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+
+### Step-by-step Instructions
+
+```bash
+# Step 1: Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Step 2: Navigate into the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Run the development server
 npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/20f571a9-fa51-426a-91f0-bdfdfe7cde79) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
