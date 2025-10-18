@@ -14,7 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      songs: {
+        Row: {
+          album: string
+          artist: string
+          audio_url: string
+          cover_art_url: string
+          created_at: string
+          duration: number
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          album: string
+          artist: string
+          audio_url: string
+          cover_art_url: string
+          created_at?: string
+          duration?: number
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          album?: string
+          artist?: string
+          audio_url?: string
+          cover_art_url?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "songs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
