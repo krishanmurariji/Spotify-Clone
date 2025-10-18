@@ -1,5 +1,5 @@
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Song } from "@/contexts/PlayerContext";
 
 export const ensureUserProfile = async (userId: string, email: string, name: string): Promise<void> => {
