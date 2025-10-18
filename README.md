@@ -79,3 +79,57 @@ We recommend installing Node.js via [nvm (Node Version Manager)](https://github.
 ### Installation Steps:
 
 1. **Clone the repository**
+
+---
+
+## 🔮 Future Enhancements
+
+- [ ] Playlist creation and management
+- [ ] Song lyrics display
+- [ ] Audio visualization
+- [ ] Equalizer controls
+- [ ] Share songs with friends
+- [ ] Cloud storage integration
+- [ ] Offline playback support
+- [ ] Music recommendations
+
+---
+
+## 👨‍💻 Developer
+
+**Krishan Murari**  
+Web Developer & Designer
+
+I am a Web Developer and Poet. I love to explore new tech and the tech world. Coding is my interest, my hobby.
+
+### Talking about Personal Stuff:
+
+- 👨‍🎓 I'm a **Web Developer & Designer**
+- 🔭 I'm currently working on [JavaScript and React](https://github.com/krishanmurariji) projects
+- ✍ I'm a **Teacher & Student** [Visit me](https://krishanmurari.live/)
+- 🌱 I'm currently learning Data Structures and Algorithms on [LeetCode](https://leetcode.com/Krishanmurariji/)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://github.com/krishanmurariji" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/github.svg" alt="Krishan_murari" height="30" width="40" /></a>
+&nbsp;
+<a href="https://www.linkedin.com/in/krishan-murari/" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/linked-in-alt.svg" alt="Krishan_murari" height="30" width="40" /></a>
+&nbsp;
+<a href="https://leetcode.com/Krishanmurariji/" target="_blank"><img align="center" src="https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/leet-code.svg" alt="Krishan_murari" height="30" width="40" /></a>
+&nbsp;
+<a href="https://krishanmurari.live/" target="_blank"><img align="center" src="https://img.shields.io/badge/Website-krishanmurari.live-blue" alt="Website" height="30" /></a>
+
+---
+
+## 📝 License
+
+This project is open source and available under the **MIT License**.
+
+---
+
+## ⭐ Show Your Support
+
+Give a ⭐️ if you enjoyed this project!
+
+---
+
+<p align="center">Made with ❤️ by Krishan Murari</p>
