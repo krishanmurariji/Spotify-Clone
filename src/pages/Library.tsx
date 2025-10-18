@@ -7,7 +7,7 @@ import { usePlayer, Song } from "@/contexts/PlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlayCircle, Pause, Clock, Music, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchUserSongs } from "@/services/songService";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,9 +15,23 @@ const Library = () => {
   const { songsList, currentSong, isPlaying, play, pause, resume } = usePlayer();
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [userSongs, setUserSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated && user === null) {
+      const timer = setTimeout(() => {
+        if (!isAuthenticated) {
+          navigate("/login");
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user, navigate]);
   
   // Load user's songs when authenticated
   useEffect(() => {

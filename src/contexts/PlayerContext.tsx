@@ -27,6 +27,7 @@ type PlayerContextType = {
   next: () => void;
   previous: () => void;
   songsList: Song[];
+  setSongsList: (songs: Song[]) => void;
   addSong: (song: Song) => void;
   loadingSongs: boolean;
   refreshSongs: () => Promise<void>;
@@ -232,6 +233,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({
         next,
         previous,
         songsList,
+        setSongsList,
         addSong,
         refreshSongs
       }}

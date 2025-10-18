@@ -27,56 +27,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for an active session when the app loads
-    const fetchSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("Error fetching session:", error);
-        return;
-      }
-      
-      if (data?.session) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('name, email')
-          .eq('id', data.session.user.id)
-          .single();
-        
-        if (userData) {
-          setUser({
-            id: data.session.user.id,
-            name: userData.name,
-            email: data.session.user.email || '',
-          });
-        }
-      }
-    };
-    
-    fetchSession();
-    
-    // Subscribe to auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('name, email')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (userData) {
-            setUser({
-              id: session.user.id,
-              name: userData.name,
-              email: session.user.email || '',
-            });
-          }
-        } else if (event === 'SIGNED_OUT') {
+      (event, session) => {
+        if (session?.user) {
+          // Defer database fetch to avoid blocking
+          setTimeout(async () => {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('name, email')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (userData) {
+              setUser({
+                id: session.user.id,
+                name: userData.name,
+                email: session.user.email || '',
+              });
+            }
+          }, 0);
+        } else {
           setUser(null);
         }
       }
     );
+    
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        supabase
+          .from('users')
+          .select('name, email')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data: userData }) => {
+            if (userData) {
+              setUser({
+                id: session.user.id,
+                name: userData.name,
+                email: session.user.email || '',
+              });
+            }
+          });
+      }
+    });
     
     return () => {
       subscription.unsubscribe();
@@ -99,24 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw error;
       }
       
-      if (data.user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('name')
-          .eq('id', data.user.id)
-          .single();
-        
-        setUser({
-          id: data.user.id,
-          name: userData?.name || 'User',
-          email: data.user.email || '',
-        });
-        
-        toast({
-          title: "Logged in successfully",
-          description: `Welcome back, ${userData?.name || 'User'}!`,
-        });
-      }
+      // Session is automatically saved by Supabase client
+      // User state will be updated by onAuthStateChange listener
+      
+      toast({
+        title: "Logged in successfully",
+        description: `Welcome back!`,
+      });
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -125,10 +109,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signup = async (name: string, email: string, password: string) => {
     try {
+      const redirectUrl = `${window.location.origin}/`;
+      
       // Register the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
       });
       
       if (error) {
@@ -159,11 +148,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           throw profileError;
         }
         
-        setUser({
-          id: data.user.id,
-          name,
-          email,
-        });
+        // Session is automatically saved by Supabase client
+        // User state will be updated by onAuthStateChange listener
         
         toast({
           title: "Account created",
@@ -189,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw error;
       }
       
-      setUser(null);
+      // User state will be updated by onAuthStateChange listener
       
       toast({
         title: "Logged out",

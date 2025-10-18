@@ -1,17 +1,63 @@
 
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, Loader2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
 import SongCard from "@/components/SongCard";
 import { usePlayer, Song } from "@/contexts/PlayerContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { fetchAllSongs } from "@/services/songService";
+import { useToast } from "@/hooks/use-toast";
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Song[]>([]);
+  const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const [loading, setLoading] = useState(true);
   const { songsList } = usePlayer();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated && user === null) {
+      const timer = setTimeout(() => {
+        if (!isAuthenticated) {
+          navigate("/login");
+        }
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user, navigate]);
+  
+  // Load all songs from database
+  useEffect(() => {
+    const loadSongs = async () => {
+      if (isAuthenticated) {
+        try {
+          setLoading(true);
+          const songs = await fetchAllSongs();
+          setAllSongs(songs);
+        } catch (error) {
+          console.error("Error loading songs:", error);
+          toast({
+            variant: "destructive",
+            title: "Error loading songs",
+            description: "Could not load songs from the database",
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    loadSongs();
+  }, [isAuthenticated, toast]);
   
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -20,7 +66,7 @@ const Search = () => {
     }
     
     const query = searchQuery.toLowerCase();
-    const results = songsList.filter(
+    const results = allSongs.filter(
       song => 
         song.title.toLowerCase().includes(query) || 
         song.artist.toLowerCase().includes(query) ||
@@ -28,7 +74,15 @@ const Search = () => {
     );
     
     setSearchResults(results);
-  }, [searchQuery, songsList]);
+  }, [searchQuery, allSongs]);
+  
+  if (loading || !isAuthenticated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-spotify" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-screen bg-gradient-to-b from-gray-900 to-black">
