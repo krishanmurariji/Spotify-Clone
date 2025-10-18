@@ -47,7 +47,7 @@ const Sidebar = () => {
           <NavItem to="/search" icon={<Search size={20} />} label="Search" />
           <NavItem to="/library" icon={<Library size={20} />} label="Your Library" />
           <div className="mt-4">
-            <NavItem to="/create-playlist" icon={<PlusCircle size={20} />} label="Create Playlist" />
+            <NavItem to="/playlists" icon={<PlusCircle size={20} />} label="Create Playlist" />
             <NavItem to="/liked-songs" icon={<Heart size={20} />} label="Liked Songs" />
           </div>
           {isAuthenticated && (

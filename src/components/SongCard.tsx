@@ -3,6 +3,7 @@ import React from "react";
 import { Play, Pause } from "lucide-react";
 import { usePlayer, Song } from "@/contexts/PlayerContext";
 import { cn } from "@/lib/utils";
+import SongActions from "./SongActions";
 
 interface SongCardProps {
   song: Song;
@@ -56,9 +57,14 @@ const SongCard: React.FC<SongCardProps> = ({ song, className }) => {
         )}
       </div>
       
-      <div className="mt-2">
-        <h3 className="truncate text-sm font-medium">{song.title}</h3>
-        <p className="truncate text-xs text-neutral-400">{song.artist}</p>
+      <div className="mt-2 flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="truncate text-sm font-medium">{song.title}</h3>
+          <p className="truncate text-xs text-neutral-400">{song.artist}</p>
+        </div>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <SongActions songId={song.id} compact />
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ import Library from "./pages/Library";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Upload from "./pages/Upload";
+import LikedSongs from "./pages/LikedSongs";
+import Playlists from "./pages/Playlists";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/upload" element={<Upload />} />
+              <Route path="/liked-songs" element={<LikedSongs />} />
+              <Route path="/playlists" element={<Playlists />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

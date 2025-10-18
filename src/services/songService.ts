@@ -37,7 +37,7 @@ export const ensureUserProfile = async (userId: string, email: string, name: str
 export const uploadSong = async (
   title: string,
   artist: string,
-  album: string,
+  album: string | null,
   audioFile: File,
   coverArtFile: File,
   userId: string,
@@ -84,7 +84,7 @@ export const uploadSong = async (
     .insert({
       title,
       artist,
-      album,
+      album: album || null,
       audio_url: audioUrl.publicUrl,
       cover_art_url: coverArtUrl.publicUrl,
       duration: 180, // Default duration as we can't easily determine it

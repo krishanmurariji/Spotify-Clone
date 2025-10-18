@@ -72,11 +72,11 @@ const Upload = () => {
       return;
     }
     
-    if (!title || !artist || !album || !audioFile || !coverArtFile) {
+    if (!title || !artist || !audioFile || !coverArtFile) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill in all fields and upload both audio and cover art files.",
+        description: "Please fill in song title, artist, and upload both audio and cover art files.",
       });
       return;
     }
@@ -162,12 +162,12 @@ const Upload = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="album">Album</Label>
+                  <Label htmlFor="album">Album (Optional)</Label>
                   <Input
                     id="album"
                     value={album}
                     onChange={(e) => setAlbum(e.target.value)}
-                    placeholder="Enter album name"
+                    placeholder="Enter album name (optional)"
                     className="bg-neutral-800 border-neutral-700"
                   />
                 </div>
