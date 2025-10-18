@@ -111,12 +111,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      // Register the user with Supabase Auth
+      // Register the user with Supabase Auth and pass name as metadata
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: name
+          }
         }
       });
       
@@ -129,33 +132,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw error;
       }
       
-      if (data.user) {
-        // Insert additional user data into your users table
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            name,
-            email,
-          });
-        
-        if (profileError) {
-          toast({
-            variant: "destructive",
-            title: "Profile creation failed",
-            description: profileError.message,
-          });
-          throw profileError;
-        }
-        
-        // Session is automatically saved by Supabase client
-        // User state will be updated by onAuthStateChange listener
-        
-        toast({
-          title: "Account created",
-          description: "Your account has been created successfully!",
-        });
-      }
+      // Profile is automatically created by database trigger
+      // Session is automatically saved by Supabase client
+      // User state will be updated by onAuthStateChange listener
+      
+      toast({
+        title: "Account created",
+        description: "Your account has been created successfully!",
+      });
     } catch (error) {
       console.error("Signup error:", error);
       throw error;
