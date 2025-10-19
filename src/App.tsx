@@ -21,6 +21,7 @@ import Upload from "./pages/Upload";
 import LikedSongs from "./pages/LikedSongs";
 import Playlists from "./pages/Playlists";
 import NotFound from "./pages/NotFound";
+import BulkUpload from "./pages/BulkUpload";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/liked-songs" element={<ProtectedRoute><LikedSongs /></ProtectedRoute>} />
               <Route path="/playlists" element={<ProtectedRoute><Playlists /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/bulk-upload" element={<BulkUpload />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

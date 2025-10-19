@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
 import { Upload as UploadIcon, Loader2 } from "lucide-react";
 import { uploadSong } from "@/services/songService";
+import * as mm from 'music-metadata';
 
 const Upload = () => {
   const [title, setTitle] = useState("");
@@ -21,13 +21,13 @@ const Upload = () => {
   const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
   const [coverArtPreview, setCoverArtPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExtractingMetadata, setIsExtractingMetadata] = useState(false);
   
   const { addSong, refreshSongs } = usePlayer();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect to login if not authenticated
   React.useEffect(() => {
     if (!isAuthenticated) {
       toast({
@@ -39,23 +39,77 @@ const Upload = () => {
     }
   }, [isAuthenticated, navigate, toast]);
 
-  const handleCoverArtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setCoverArtFile(file);
+  // Extract metadata from audio file
+  const extractMetadata = async (file: File) => {
+    setIsExtractingMetadata(true);
+    
+    try {
+      // Parse the file to extract metadata
+      const metadata = await mm.parseBlob(file);
+      const { common } = metadata;
       
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = () => {
-        setCoverArtPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Prefill form fields with extracted metadata
+      if (common.title) setTitle(common.title);
+      if (common.artist) setArtist(common.artist);
+      if (common.album) setAlbum(common.album);
+      
+      // Extract and display cover art
+      if (common.picture && common.picture.length > 0) {
+        const picture = common.picture[0];
+        
+        // Convert buffer to base64 and create data URL
+        const base64String = btoa(
+          new Uint8Array(picture.data).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            ''
+          )
+        );
+        
+        const imageUrl = `data:${picture.format};base64,${base64String}`;
+        setCoverArtPreview(imageUrl);
+        
+        // Convert base64 to File object for upload
+        const blob = await (await fetch(imageUrl)).blob();
+        const coverFile = new File([blob], "cover.jpg", { type: picture.format });
+        setCoverArtFile(coverFile);
+      }
+      
+      toast({
+        title: "Metadata Extracted",
+        description: "Song information has been filled automatically!",
+      });
+    } catch (error) {
+      console.error("Error reading metadata:", error);
+      toast({
+        variant: "destructive",
+        title: "Metadata Extraction Failed",
+        description: "Could not read song information. Please fill manually.",
+      });
+    } finally {
+      setIsExtractingMetadata(false);
     }
   };
 
   const handleAudioFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setAudioFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setAudioFile(file);
+      
+      // Automatically extract metadata when file is selected
+      extractMetadata(file);
+    }
+  };
+
+  const handleCoverArtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setCoverArtFile(file);
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCoverArtPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -84,7 +138,6 @@ const Upload = () => {
     setIsLoading(true);
     
     try {
-      // Upload song to Supabase with user profile info
       const newSong = await uploadSong(
         title,
         artist,
@@ -96,7 +149,6 @@ const Upload = () => {
         user.name
       );
       
-      // Add song to player context
       addSong(newSong);
       
       toast({
@@ -112,7 +164,6 @@ const Upload = () => {
       setCoverArtFile(null);
       setCoverArtPreview(null);
       
-      // Navigate to library
       navigate("/library");
     } catch (error) {
       console.error("Upload error:", error);
@@ -129,7 +180,6 @@ const Upload = () => {
   return (
     <div className="flex h-full min-h-screen bg-gradient-to-b from-spotify-dark to-black">
       <Sidebar />
-      
       <MobileNav />
       
       <div className="flex-1 overflow-y-auto px-2 pb-24 md:px-8 mt-14 md:mt-0">
@@ -139,6 +189,28 @@ const Upload = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="audioFile">Audio File</Label>
+                  <Input
+                    id="audioFile"
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleAudioFileChange}
+                    className="bg-neutral-800 border-neutral-700"
+                  />
+                  {audioFile && (
+                    <p className="text-xs text-green-500">
+                      Selected: {audioFile.name}
+                    </p>
+                  )}
+                  {isExtractingMetadata && (
+                    <p className="text-xs text-blue-500 flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={14} />
+                      Extracting metadata...
+                    </p>
+                  )}
+                </div>
+                
                 <div className="space-y-2">
                   <Label htmlFor="title">Song Title</Label>
                   <Input
@@ -171,22 +243,6 @@ const Upload = () => {
                     className="bg-neutral-800 border-neutral-700"
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="audioFile">Audio File</Label>
-                  <Input
-                    id="audioFile"
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleAudioFileChange}
-                    className="bg-neutral-800 border-neutral-700"
-                  />
-                  {audioFile && (
-                    <p className="text-xs text-green-500">
-                      Selected: {audioFile.name}
-                    </p>
-                  )}
-                </div>
               </div>
               
               <div className="flex flex-col items-center justify-center">
@@ -200,7 +256,9 @@ const Upload = () => {
                   ) : (
                     <div className="text-center p-6">
                       <UploadIcon size={48} className="mx-auto mb-2 text-neutral-500" />
-                      <p className="text-neutral-500">Upload Cover Art</p>
+                      <p className="text-neutral-500">
+                        {isExtractingMetadata ? "Loading cover art..." : "Upload Cover Art"}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -222,8 +280,19 @@ const Upload = () => {
             </div>
             
             <div className="pt-4">
-              <Button type="submit" className="w-full bg-spotify hover:bg-spotify-light" disabled={isLoading}>
-                {isLoading ? "Uploading..." : "Upload Song"}
+              <Button 
+                type="submit" 
+                className="w-full bg-spotify hover:bg-spotify-light" 
+                disabled={isLoading || isExtractingMetadata}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={16} />
+                    Uploading...
+                  </span>
+                ) : (
+                  "Upload Song"
+                )}
               </Button>
             </div>
           </form>

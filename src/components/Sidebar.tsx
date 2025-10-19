@@ -76,6 +76,14 @@ const Sidebar = () => {
                 <p className="text-xs text-neutral-400 truncate">{user.email}</p>
               </div>
             </Link>
+            <Link
+  to="/bulk-upload"
+  className="flex items-center gap-3 px-4 py-2 text-neutral-400 hover:text-white transition"
+>
+  <Upload size={20} />
+  <span>Bulk Upload</span>
+</Link>
+
             <Button
               onClick={logout}
               variant="ghost"
