@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send verification email
     const emailResponse = await resend.emails.send({
-      from: "TuneVerse <onboarding@resend.dev>",
+      from: "TuneVerse <mrkrishanmurariji@gmail.com>",
       to: [email],
       subject: "Verify Your Email - TuneVerse",
       html: `

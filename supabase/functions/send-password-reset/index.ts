@@ -22,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, resetLink }: PasswordResetRequest = await req.json();
 
     const emailResponse = await resend.emails.send({
-      from: "TuneVerse <onboarding@resend.dev>",
+      from: "TuneVerse <mrkrishanmurariji@gmail.com>",
       to: [email],
       subject: "Reset Your Password - TuneVerse",
       html: `
