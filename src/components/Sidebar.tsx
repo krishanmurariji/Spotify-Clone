@@ -1,13 +1,15 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Library, PlusCircle, Heart, Upload } from "lucide-react";
+import { Home, Search, Library, PlusCircle, Heart, Upload, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const NavItem = ({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) => (
     <Link
@@ -57,6 +59,33 @@ const Sidebar = () => {
       </div>
       <div className="mt-auto px-5 py-4">
         <div className="h-[1px] w-full bg-neutral-800 mb-4" />
+        {isAuthenticated && user && (
+          <div className="mb-4">
+            <Link
+              to="/profile"
+              className="flex items-center gap-x-3 p-2 rounded-lg hover:bg-neutral-800 transition"
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.avatar_url} alt={user.name} />
+                <AvatarFallback className="bg-spotify text-white">
+                  {user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                <p className="text-xs text-neutral-400 truncate">{user.email}</p>
+              </div>
+            </Link>
+            <Button
+              onClick={logout}
+              variant="ghost"
+              className="w-full mt-2 justify-start text-neutral-400 hover:text-white"
+            >
+              <LogOut size={16} className="mr-2" />
+              Logout
+            </Button>
+          </div>
+        )}
         <div className="flex items-center justify-between text-xs text-neutral-400">
           <span>Privacy Policy</span>
           <span>•</span>

@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Please enter a valid email address");
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -34,12 +45,23 @@ const Signup = () => {
       });
       return;
     }
-    
-    if (password.length < 6) {
+
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
       toast({
         variant: "destructive",
-        title: "Password Too Short",
-        description: "Password must be at least 6 characters long",
+        title: "Invalid Email",
+        description: emailValidation.error.errors[0].message,
+      });
+      return;
+    }
+
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Password",
+        description: passwordValidation.error.errors[0].message,
       });
       return;
     }
@@ -48,10 +70,21 @@ const Signup = () => {
     
     try {
       await signup(name, email, password);
-      navigate("/");
+      
+      // Get the newly created user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Send verification email
+        await supabase.functions.invoke('send-verification', {
+          body: { email, userId: user.id },
+        });
+
+        // Redirect to verification page
+        navigate(`/verify-email?userId=${user.id}`);
+      }
     } catch (error) {
       console.error("Signup error:", error);
-      // Toast is already shown in the AuthContext for signup failures
     } finally {
       setIsLoading(false);
     }
@@ -117,12 +150,15 @@ const Signup = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Password (min. 6 characters)"
+                placeholder="Password (min. 8 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="bg-neutral-800 border-neutral-700"
               />
+              <p className="text-xs text-neutral-400">
+                Must include uppercase, lowercase, number, and special character
+              </p>
             </div>
             
             <div className="pt-2">

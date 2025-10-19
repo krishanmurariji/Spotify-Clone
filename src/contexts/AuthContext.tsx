@@ -8,6 +8,7 @@ type User = {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string;
 };
 
 type AuthContextType = {
@@ -16,6 +17,10 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  verifyEmail: (userId: string, code: string) => Promise<boolean>;
+  sendPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (newPassword: string) => Promise<void>;
+  updateProfile: (updates: { name?: string; avatar_url?: string }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setTimeout(async () => {
             const { data: userData } = await supabase
               .from('users')
-              .select('name, email')
+              .select('name, email, avatar_url')
               .eq('id', session.user.id)
               .single();
             
@@ -44,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 id: session.user.id,
                 name: userData.name,
                 email: session.user.email || '',
+                avatar_url: userData.avatar_url,
               });
             }
           }, 0);
@@ -58,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (session?.user) {
         supabase
           .from('users')
-          .select('name, email')
+          .select('name, email, avatar_url')
           .eq('id', session.user.id)
           .single()
           .then(({ data: userData }) => {
@@ -67,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 id: session.user.id,
                 name: userData.name,
                 email: session.user.email || '',
+                avatar_url: userData.avatar_url,
               });
             }
           });
@@ -159,14 +166,120 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw error;
       }
       
-      // User state will be updated by onAuthStateChange listener
-      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
       });
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  const verifyEmail = async (userId: string, code: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('verification_codes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('code', code)
+        .eq('verified', false)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        toast({
+          variant: "destructive",
+          title: "Invalid code",
+          description: "The verification code is invalid or has expired",
+        });
+        return false;
+      }
+
+      await supabase
+        .from('verification_codes')
+        .update({ verified: true })
+        .eq('id', data.id);
+
+      toast({
+        title: "Email verified",
+        description: "Your email has been verified successfully",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Verification error:", error);
+      return false;
+    }
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for the password reset link",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to send reset email",
+        description: error.message,
+      });
+      throw error;
+    }
+  };
+
+  const resetPassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Password updated",
+        description: "Your password has been updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update password",
+        description: error.message,
+      });
+      throw error;
+    }
+  };
+
+  const updateProfile = async (updates: { name?: string; avatar_url?: string }) => {
+    try {
+      if (!user) throw new Error("No user logged in");
+
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setUser({ ...user, ...updates });
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update profile",
+        description: error.message,
+      });
+      throw error;
     }
   };
 
@@ -177,7 +290,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isAuthenticated: !!user,
         login,
         signup,
-        logout
+        logout,
+        verifyEmail,
+        sendPasswordReset,
+        resetPassword,
+        updateProfile,
       }}
     >
       {children}
