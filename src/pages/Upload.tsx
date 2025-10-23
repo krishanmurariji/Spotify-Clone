@@ -1,25 +1,29 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { usePlayer } from "@/contexts/PlayerContext";
+import { usePlayer, Song } from "@/contexts/PlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
 import { Upload as UploadIcon, Loader2 } from "lucide-react";
-import { uploadSong } from "@/services/songService";
+import { uploadSong, updateSong } from "@/services/songService";
 import * as mm from 'music-metadata';
 
 const Upload = () => {
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [album, setAlbum] = useState("");
+  const location = useLocation();
+  const editSong = location.state?.editSong as Song | undefined;
+  
+  const [title, setTitle] = useState(editSong?.title || "");
+  const [artist, setArtist] = useState(editSong?.artist || "");
+  const [album, setAlbum] = useState(editSong?.album || "");
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
-  const [coverArtPreview, setCoverArtPreview] = useState<string | null>(null);
+  const [coverArtPreview, setCoverArtPreview] = useState<string | null>(editSong?.coverArt || null);
+  const [duration, setDuration] = useState<number>(editSong?.duration || 0);
   const [isLoading, setIsLoading] = useState(false);
   const [isExtractingMetadata, setIsExtractingMetadata] = useState(false);
   
@@ -28,7 +32,7 @@ const Upload = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAuthenticated) {
       toast({
         variant: "destructive",
@@ -45,16 +49,22 @@ const Upload = () => {
     
     try {
       // Parse the file to extract metadata
-      const metadata = await mm.parseBlob(file);
-      const { common } = metadata;
+      const metadata = await mm.parseBlob(file, { duration: true });
+      const { common, format } = metadata;
       
       // Prefill form fields with extracted metadata
-      if (common.title) setTitle(common.title);
-      if (common.artist) setArtist(common.artist);
-      if (common.album) setAlbum(common.album);
+      if (common.title && !editSong) setTitle(common.title);
+      if (common.artist && !editSong) setArtist(common.artist);
+      if (common.album && !editSong) setAlbum(common.album);
+      
+      // Set duration from format and round to integer
+      if (format.duration) {
+        // Round to nearest integer since database expects integer
+        setDuration(Math.round(format.duration));
+      }
       
       // Extract and display cover art
-      if (common.picture && common.picture.length > 0) {
+      if (common.picture && common.picture.length > 0 && !editSong) {
         const picture = common.picture[0];
         
         // Convert buffer to base64 and create data URL
@@ -76,7 +86,7 @@ const Upload = () => {
       
       toast({
         title: "Metadata Extracted",
-        description: "Song information has been filled automatically!",
+        description: `Song information has been filled automatically! Duration: ${Math.round(format.duration || 0)}s`,
       });
     } catch (error) {
       console.error("Error reading metadata:", error);
@@ -126,11 +136,21 @@ const Upload = () => {
       return;
     }
     
-    if (!title || !artist || !audioFile || !coverArtFile) {
+    if (!title || !artist) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill in song title, artist, and upload both audio and cover art files.",
+        description: "Please fill in song title and artist.",
+      });
+      return;
+    }
+
+    // For editing, audio and cover are optional
+    if (!editSong && (!audioFile || !coverArtFile)) {
+      toast({
+        variant: "destructive",
+        title: "Missing Files",
+        description: "Please upload both audio and cover art files.",
       });
       return;
     }
@@ -138,23 +158,46 @@ const Upload = () => {
     setIsLoading(true);
     
     try {
-      const newSong = await uploadSong(
-        title,
-        artist,
-        album,
-        audioFile,
-        coverArtFile,
-        user.id,
-        user.email,
-        user.name
-      );
+      // Ensure duration is an integer
+      const roundedDuration = Math.round(duration || 180);
       
-      addSong(newSong);
-      
-      toast({
-        title: "Song Uploaded",
-        description: "Your song has been uploaded successfully!",
-      });
+      if (editSong) {
+        // Update existing song
+        const updatedSong = await updateSong(
+          editSong.id,
+          title,
+          artist,
+          album,
+          audioFile || undefined,
+          coverArtFile || undefined,
+          roundedDuration
+        );
+        
+        toast({
+          title: "Song Updated",
+          description: "Your song has been updated successfully!",
+        });
+      } else {
+        // Upload new song
+        const newSong = await uploadSong(
+          title,
+          artist,
+          album,
+          audioFile!,
+          coverArtFile!,
+          user.id,
+          user.email,
+          user.name,
+          roundedDuration
+        );
+        
+        addSong(newSong);
+        
+        toast({
+          title: "Song Uploaded",
+          description: "Your song has been uploaded successfully!",
+        });
+      }
       
       // Reset form
       setTitle("");
@@ -163,14 +206,15 @@ const Upload = () => {
       setAudioFile(null);
       setCoverArtFile(null);
       setCoverArtPreview(null);
+      setDuration(0);
       
       navigate("/library");
     } catch (error) {
       console.error("Upload error:", error);
       toast({
         variant: "destructive",
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : "There was an error uploading your song. Please try again.",
+        title: editSong ? "Update Failed" : "Upload Failed",
+        description: error instanceof Error ? error.message : "There was an error. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -184,13 +228,17 @@ const Upload = () => {
       
       <div className="flex-1 overflow-y-auto px-2 pb-24 md:px-8 mt-14 md:mt-0">
         <div className="max-w-3xl mx-auto pt-8 md:pt-16">
-          <h1 className="text-3xl font-bold mb-8">Upload Your Music</h1>
+          <h1 className="text-3xl font-bold mb-8">
+            {editSong ? "Edit Your Music" : "Upload Your Music"}
+          </h1>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="audioFile">Audio File</Label>
+                  <Label htmlFor="audioFile">
+                    Audio File {editSong && "(Optional - leave empty to keep current)"}
+                  </Label>
                   <Input
                     id="audioFile"
                     type="file"
@@ -207,6 +255,11 @@ const Upload = () => {
                     <p className="text-xs text-blue-500 flex items-center gap-2">
                       <Loader2 className="animate-spin" size={14} />
                       Extracting metadata...
+                    </p>
+                  )}
+                  {duration > 0 && (
+                    <p className="text-xs text-neutral-400">
+                      Duration: {Math.floor(duration / 60)}:{String(Math.floor(duration % 60)).padStart(2, '0')}
                     </p>
                   )}
                 </div>
@@ -267,7 +320,7 @@ const Upload = () => {
                   htmlFor="coverArt" 
                   className="cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-center w-full py-2 rounded-md transition"
                 >
-                  {coverArtFile ? "Change Cover Art" : "Select Cover Art"}
+                  {coverArtFile || coverArtPreview ? "Change Cover Art" : "Select Cover Art"}
                 </Label>
                 <Input
                   id="coverArt"
@@ -279,19 +332,27 @@ const Upload = () => {
               </div>
             </div>
             
-            <div className="pt-4">
+            <div className="pt-4 flex gap-4">
+              <Button 
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => navigate("/library")}
+              >
+                Cancel
+              </Button>
               <Button 
                 type="submit" 
-                className="w-full bg-spotify hover:bg-spotify-light" 
+                className="flex-1 bg-spotify hover:bg-spotify-light" 
                 disabled={isLoading || isExtractingMetadata}
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="animate-spin" size={16} />
-                    Uploading...
+                    {editSong ? "Updating..." : "Uploading..."}
                   </span>
                 ) : (
-                  "Upload Song"
+                  editSong ? "Update Song" : "Upload Song"
                 )}
               </Button>
             </div>

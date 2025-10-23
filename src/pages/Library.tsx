@@ -1,14 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
 import { usePlayer, Song } from "@/contexts/PlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlayCircle, Pause, Clock, Music, Loader2 } from "lucide-react";
+import { PlayCircle, Pause, Music, Loader2, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { fetchUserSongs } from "@/services/songService";
+import { fetchUserSongs, deleteSong } from "@/services/songService";
 import { useToast } from "@/hooks/use-toast";
 
 const Library = () => {
@@ -19,6 +18,7 @@ const Library = () => {
   
   const [userSongs, setUserSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hoveredSong, setHoveredSong] = useState<string | null>(null);
   
   // Check authentication
   useEffect(() => {
@@ -58,6 +58,7 @@ const Library = () => {
   }, [isAuthenticated, user, toast]);
     
   const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -68,6 +69,30 @@ const Library = () => {
       isPlaying ? pause() : resume();
     } else {
       play(song);
+    }
+  };
+
+  const handleEdit = (song: Song) => {
+    navigate('/upload', { state: { editSong: song } });
+  };
+
+  const handleDelete = async (songId: string) => {
+    if (window.confirm("Are you sure you want to delete this song?")) {
+      try {
+        await deleteSong(songId);
+        setUserSongs(userSongs.filter(song => song.id !== songId));
+        toast({
+          title: "Song Deleted",
+          description: "The song has been removed successfully",
+        });
+      } catch (error) {
+        console.error("Error deleting song:", error);
+        toast({
+          variant: "destructive",
+          title: "Delete Failed",
+          description: "Could not delete the song. Please try again.",
+        });
+      }
     }
   };
 
@@ -112,53 +137,77 @@ const Library = () => {
                   <div className="bg-neutral-900/50 rounded-lg overflow-hidden">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-neutral-800">
-                          <th className="px-4 py-3 text-left w-12">#</th>
-                          <th className="px-4 py-3 text-left">Title</th>
-                          <th className="px-4 py-3 text-left hidden md:table-cell">Album</th>
-                          <th className="px-4 py-3 text-right">
-                            <Clock size={16} />
-                          </th>
+                        <tr className="border-b border-neutral-800 text-neutral-400 text-sm">
+                          <th className="px-4 py-3 text-left font-medium">Song</th>
+                          <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Artist</th>
+                          <th className="px-4 py-3 text-left font-medium hidden lg:table-cell">Album</th>
+                          <th className="px-4 py-3 text-center font-medium">Duration</th>
+                          <th className="px-4 py-3 text-center font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {userSongs.map((song, index) => (
+                        {userSongs.map((song) => (
                           <tr 
                             key={song.id} 
-                            className="border-b border-neutral-800 hover:bg-neutral-800/50 transition-colors"
+                            className="border-b border-neutral-800 hover:bg-neutral-800/50 transition-colors group"
+                            onMouseEnter={() => setHoveredSong(song.id)}
+                            onMouseLeave={() => setHoveredSong(null)}
                           >
                             <td className="px-4 py-3">
-                              <button
-                                onClick={() => handlePlayPause(song)}
-                                className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-white"
-                              >
-                                {currentSong?.id === song.id && isPlaying ? (
-                                  <Pause size={16} />
-                                ) : (
-                                  <PlayCircle size={16} />
-                                )}
-                              </button>
-                            </td>
-                            <td className="px-4 py-3">
                               <div className="flex items-center gap-x-3">
-                                <div className="h-10 w-10 rounded overflow-hidden">
+                                <div className="relative h-10 w-10 rounded overflow-hidden flex-shrink-0">
                                   <img 
                                     src={song.coverArt} 
                                     alt={song.title}
                                     className="object-cover h-full w-full"
                                   />
+                                  {hoveredSong === song.id && (
+                                    <button
+                                      onClick={() => handlePlayPause(song)}
+                                      className="absolute inset-0 bg-black/60 flex items-center justify-center text-white"
+                                    >
+                                      {currentSong?.id === song.id && isPlaying ? (
+                                        <Pause size={20} />
+                                      ) : (
+                                        <PlayCircle size={20} />
+                                      )}
+                                    </button>
+                                  )}
                                 </div>
-                                <div>
-                                  <div className="font-medium">{song.title}</div>
-                                  <div className="text-sm text-neutral-400">{song.artist}</div>
+                                <div className="min-w-0">
+                                  <div className="font-medium truncate">{song.title}</div>
+                                  <div className="text-sm text-neutral-400 truncate md:hidden">{song.artist}</div>
                                 </div>
                               </div>
                             </td>
                             <td className="px-4 py-3 text-neutral-400 hidden md:table-cell">
-                              {song.album}
+                              {song.artist}
                             </td>
-                            <td className="px-4 py-3 text-neutral-400 text-right">
+                            <td className="px-4 py-3 text-neutral-400 hidden lg:table-cell">
+                              {song.album || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-neutral-400 text-center">
                               {formatTime(song.duration)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEdit(song)}
+                                  className="h-8 w-8 p-0 hover:text-spotify"
+                                >
+                                  <Edit size={16} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(song.id)}
+                                  className="h-8 w-8 p-0 hover:text-red-500"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -172,7 +221,7 @@ const Library = () => {
                 <h2 className="text-2xl font-bold mb-6">Recently Played</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {songsList.slice(0, 6).map((song) => (
-                    <div key={song.id} className="bg-neutral-800/50 p-3 rounded-md hover:bg-neutral-800 transition-colors">
+                    <div key={song.id} className="bg-neutral-800/50 p-3 rounded-md hover:bg-neutral-800 transition-colors group">
                       <div className="relative aspect-square w-full overflow-hidden rounded-md mb-3">
                         <img 
                           src={song.coverArt} 
@@ -181,7 +230,7 @@ const Library = () => {
                         />
                         <button
                           onClick={() => handlePlayPause(song)}
-                          className="absolute bottom-2 right-2 h-10 w-10 flex items-center justify-center rounded-full bg-spotify opacity-0 hover:scale-105 transition-all group-hover:opacity-100"
+                          className="absolute bottom-2 right-2 h-10 w-10 flex items-center justify-center rounded-full bg-spotify opacity-0 group-hover:opacity-100 hover:scale-105 transition-all"
                         >
                           {currentSong?.id === song.id && isPlaying ? (
                             <Pause className="text-black" size={20} />

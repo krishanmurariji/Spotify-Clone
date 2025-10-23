@@ -132,6 +132,7 @@ export const uploadSong = async (
   userId: string,
   userEmail: string = '',
   userName: string = '',
+  duration: number = 180,
   skipDuplicateCheck: boolean = false
 ): Promise<Song> => {
   try {
@@ -215,7 +216,7 @@ export const uploadSong = async (
         album: album?.trim() || null,
         audio_url: audioUrl.publicUrl,
         cover_art_url: coverArtUrl.publicUrl,
-        duration: 180,
+        duration: duration || 180,
         user_id: userId
       })
       .select()
@@ -287,6 +288,189 @@ export const fetchUserSongs = async (userId: string): Promise<Song[]> => {
     duration: song.duration,
     uploadedBy: song.user_id
   }));
+};
+
+// Delete song from database and storage
+export const deleteSong = async (songId: string): Promise<void> => {
+  try {
+    // First, get the song data to extract file paths
+    const { data: songData, error: fetchError } = await supabase
+      .from('songs')
+      .select('audio_url, cover_art_url')
+      .eq('id', songId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching song for deletion:', fetchError);
+      throw new Error(`Failed to fetch song: ${fetchError.message}`);
+    }
+
+    // Extract file paths from URLs
+    const audioPath = songData.audio_url.split('/songs/').pop();
+    const coverPath = songData.cover_art_url.split('/covers/').pop();
+
+    // Delete from database first
+    const { error: deleteError } = await supabase
+      .from('songs')
+      .delete()
+      .eq('id', songId);
+
+    if (deleteError) {
+      console.error('Error deleting song from database:', deleteError);
+      throw new Error(`Failed to delete song: ${deleteError.message}`);
+    }
+
+    // Delete files from storage
+    if (audioPath) {
+      const { error: audioDeleteError } = await supabase.storage
+        .from('songs')
+        .remove([audioPath]);
+
+      if (audioDeleteError) {
+        console.error('Error deleting audio file:', audioDeleteError);
+      }
+    }
+
+    if (coverPath) {
+      const { error: coverDeleteError } = await supabase.storage
+        .from('covers')
+        .remove([coverPath]);
+
+      if (coverDeleteError) {
+        console.error('Error deleting cover art file:', coverDeleteError);
+      }
+    }
+
+    console.log('Song deleted successfully');
+  } catch (error) {
+    console.error('Delete song error:', error);
+    throw error;
+  }
+};
+
+// Update song in database and optionally replace files
+export const updateSong = async (
+  songId: string,
+  title: string,
+  artist: string,
+  album: string,
+  audioFile?: File,
+  coverArtFile?: File,
+  duration?: number
+): Promise<Song> => {
+  try {
+    // Get existing song data
+    const { data: existingSong, error: fetchError } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('id', songId)
+      .single();
+
+    if (fetchError) {
+      throw new Error(`Failed to fetch song: ${fetchError.message}`);
+    }
+
+    let audioUrl = existingSong.audio_url;
+    let coverArtUrl = existingSong.cover_art_url;
+    let updatedDuration = duration || existingSong.duration;
+
+    // If new audio file is provided, upload it and delete old one
+    if (audioFile) {
+      const userId = existingSong.user_id;
+      const audioFileName = generateUniqueFilename(audioFile);
+      const audioPath = `${userId}/${audioFileName}`;
+
+      // Upload new audio file
+      const { error: audioUploadError } = await supabase.storage
+        .from('songs')
+        .upload(audioPath, audioFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (audioUploadError) {
+        throw new Error(`Error uploading audio: ${audioUploadError.message}`);
+      }
+
+      // Get new audio URL
+      const { data: newAudioUrl } = supabase.storage
+        .from('songs')
+        .getPublicUrl(audioPath);
+
+      audioUrl = newAudioUrl.publicUrl;
+
+      // Delete old audio file
+      const oldAudioPath = existingSong.audio_url.split('/songs/').pop();
+      if (oldAudioPath) {
+        await supabase.storage.from('songs').remove([oldAudioPath]);
+      }
+    }
+
+    // If new cover art file is provided, upload it and delete old one
+    if (coverArtFile) {
+      const userId = existingSong.user_id;
+      const coverFileName = generateUniqueFilename(coverArtFile);
+      const coverPath = `${userId}/${coverFileName}`;
+
+      // Upload new cover art file
+      const { error: coverUploadError } = await supabase.storage
+        .from('covers')
+        .upload(coverPath, coverArtFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (coverUploadError) {
+        throw new Error(`Error uploading cover art: ${coverUploadError.message}`);
+      }
+
+      // Get new cover art URL
+      const { data: newCoverUrl } = supabase.storage
+        .from('covers')
+        .getPublicUrl(coverPath);
+
+      coverArtUrl = newCoverUrl.publicUrl;
+
+      // Delete old cover art file
+      const oldCoverPath = existingSong.cover_art_url.split('/covers/').pop();
+      if (oldCoverPath) {
+        await supabase.storage.from('covers').remove([oldCoverPath]);
+      }
+    }
+
+    // Update song metadata in database
+    const { data: updatedSong, error: updateError } = await supabase
+      .from('songs')
+      .update({
+        title: title.trim(),
+        artist: artist.trim(),
+        album: album?.trim() || null,
+        audio_url: audioUrl,
+        cover_art_url: coverArtUrl,
+        duration: updatedDuration,
+      })
+      .eq('id', songId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw new Error(`Failed to update song: ${updateError.message}`);
+    }
+
+    return {
+      id: updatedSong.id,
+      title: updatedSong.title,
+      artist: updatedSong.artist,
+      album: updatedSong.album,
+      audioUrl: updatedSong.audio_url,
+      coverArt: updatedSong.cover_art_url,
+      duration: updatedSong.duration,
+      uploadedBy: updatedSong.user_id
+    };
+  } catch (error) {
+    console.error('Update song error:', error);
+    throw error;
+  }
 };
 
 export const searchSongs = async (query: string): Promise<Song[]> => {

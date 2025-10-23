@@ -60,21 +60,22 @@ const Search = () => {
   }, [isAuthenticated, toast]);
   
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setSearchResults([]);
-      return;
-    }
-    
-    const query = searchQuery.toLowerCase();
-    const results = allSongs.filter(
-      song => 
-        song.title.toLowerCase().includes(query) || 
-        song.artist.toLowerCase().includes(query) ||
-        song.album.toLowerCase().includes(query)
-    );
-    
-    setSearchResults(results);
-  }, [searchQuery, allSongs]);
+  if (searchQuery.trim() === "") {
+    setSearchResults([]);
+    return;
+  }
+  
+  const query = searchQuery.toLowerCase();
+  const results = allSongs.filter(
+    song => 
+      (song.title && song.title.toLowerCase().includes(query)) || 
+      (song.artist && song.artist.toLowerCase().includes(query)) ||
+      (song.album && song.album.toLowerCase().includes(query))
+  );
+  
+  setSearchResults(results);
+}, [searchQuery, allSongs]);
+
   
   if (loading || !isAuthenticated) {
     return (

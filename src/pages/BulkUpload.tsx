@@ -20,6 +20,7 @@ interface FileWithMetadata {
   album: string;
   coverArt: string | null;
   coverArtFile: File | null;
+  duration: number;
   status: 'pending' | 'processing' | 'success' | 'error' | 'skipped';
   progress: number;
   error?: string;
@@ -103,8 +104,8 @@ const BulkUpload = () => {
   // Extract metadata from audio file
   const extractMetadata = async (file: File): Promise<FileWithMetadata> => {
     try {
-      const metadata = await mm.parseBlob(file);
-      const { common } = metadata;
+      const metadata = await mm.parseBlob(file, { duration: true });
+      const { common, format } = metadata;
       
       let coverArtFile: File | null = null;
       let coverArt: string | null = null;
@@ -126,6 +127,7 @@ const BulkUpload = () => {
       const title = common.title || fileName;
       const artist = common.artist || "Unknown Artist";
       const album = common.album || "Unknown Album";
+      const duration = format.duration ? Math.round(format.duration) : 180;
       
       if (!coverArtFile) {
         coverArtFile = await generateDefaultCoverArt(title);
@@ -143,6 +145,7 @@ const BulkUpload = () => {
         album,
         coverArt,
         coverArtFile,
+        duration,
         status: 'pending',
         progress: 0,
       };
@@ -164,6 +167,7 @@ const BulkUpload = () => {
         album: "Unknown Album",
         coverArt,
         coverArtFile,
+        duration: 180,
         status: 'pending',
         progress: 0,
       };
@@ -231,7 +235,7 @@ const BulkUpload = () => {
         return { success: true, skipped: true };
       }
       
-      // Upload the song (skip duplicate check since we already checked)
+      // Upload the song with correct parameter order
       const newSong = await uploadSong(
         fileData.title,
         fileData.artist,
@@ -241,7 +245,8 @@ const BulkUpload = () => {
         user!.id,
         user!.email,
         user!.name,
-        true // Skip duplicate check in uploadSong since we already checked
+        fileData.duration, // Duration as integer
+        true // Skip duplicate check since we already checked
       );
       
       addSong(newSong);
@@ -458,7 +463,9 @@ const BulkUpload = () => {
                         </p>
                       )}
 
-                      <p className="text-xs text-neutral-500 mt-2">{fileData.file.name}</p>
+                      <p className="text-xs text-neutral-500 mt-2">
+                        {fileData.file.name} • {Math.floor(fileData.duration / 60)}:{String(Math.floor(fileData.duration % 60)).padStart(2, '0')}
+                      </p>
                     </div>
                   ))}
                 </div>
