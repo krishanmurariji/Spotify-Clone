@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+
 const Sidebar = () => {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
@@ -97,28 +98,25 @@ const Sidebar = () => {
           <NavItem to="/" icon={<Home size={20} />} label="Home" />
           <NavItem to="/search" icon={<Search size={20} />} label="Search" />
           <NavItem to="/library" icon={<Library size={20} />} label="Your Library" />
-        </div>
-
-        <Separator className="bg-neutral-800 my-4" />
-
-        {/* Collections */}
-        <div className="space-y-1">
-          <div className="px-4 py-2">
-            <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-              Your Collection
-            </h3>
-          </div>
+          {/* Moved Liked Songs directly below Library */}
           <NavItem 
             to="/liked-songs" 
             icon={<Heart size={20} />} 
             label="Liked Songs" 
           />
+          {/* Commented out Playlists as requested */}
+          {/*
           <NavItem 
             to="/playlists" 
             icon={<Music size={20} />} 
             label="Playlists" 
           />
+          */}
         </div>
+
+        {/* <Separator className="bg-neutral-800 my-4" /> */}
+
+        {/* Removed "Your Collection" section */}
 
         {isAuthenticated && (
           <>
