@@ -57,9 +57,9 @@ const MobileNav = () => {
                   </div>
                   <span className="font-extrabold">TuneVerse</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                {/* <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
                   <X size={24} />
-                </Button>
+                </Button> */}
               </div>
               
               <div className="flex flex-col gap-y-6 px-6 py-8">

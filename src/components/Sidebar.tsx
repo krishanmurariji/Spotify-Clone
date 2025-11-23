@@ -81,7 +81,19 @@ const Sidebar = () => {
       <div className="p-6">
         <Link to="/" className="flex items-center gap-x-3 group">
           <div className="bg-gradient-to-br from-spotify to-green-400 rounded-xl p-2 shadow-lg group-hover:scale-105 transition-transform">
-            <Music className="w-6 h-6 text-black" strokeWidth={2.5} />
+            {/* <Music className="w-6 h-6 text-black" strokeWidth={2.5} /> */}
+              <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 0C5.4 0 0 5.4 0 12C0 18.6 5.4 24 12 24C18.6 24 24 18.6 24 12C24 5.4 18.6 0 12 0ZM17.521 17.34C17.281 17.699 16.861 17.84 16.5 17.6C13.68 15.919 10.14 15.5 6 16.54C5.58 16.64 5.22 16.34 5.12 15.96C5.02 15.54 5.32 15.18 5.7 15.08C10.14 14.0 14.02 14.48 17.16 16.32C17.52 16.56 17.659 17.02 17.521 17.34ZM18.961 14.14C18.661 14.56 18.121 14.739 17.701 14.439C14.501 12.54 9.76 11.909 5.96 13.089C5.479 13.229 4.979 12.969 4.839 12.509C4.7 12.009 4.96 11.519 5.42 11.379C9.76 10.069 14.921 10.759 18.641 12.939C19.041 13.209 19.241 13.759 18.961 14.14ZM19.081 10.839C15.221 8.639 8.841 8.439 5.161 9.599C4.561 9.779 3.941 9.439 3.761 8.839C3.581 8.239 3.921 7.619 4.521 7.439C8.801 6.139 15.821 6.359 20.161 8.939C20.701 9.239 20.901 9.959 20.581 10.5C20.281 11.02 19.561 11.239 19.081 10.839Z"
+                        fill="black"
+                      />
+                    </svg>
           </div>
           <div>
             <div className="text-white text-xl font-bold tracking-tight">TuneVerse</div>
