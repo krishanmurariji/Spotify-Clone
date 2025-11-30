@@ -85,7 +85,7 @@ const MobileNav = () => {
                   onClick={() => setOpen(false)}
                 >
                   <Library size={24} />
-                  <span>Your Library</span>
+                  <span>Library</span>
                 </Link>
                 
                 <div className="h-[1px] w-full bg-neutral-800 my-4" />
