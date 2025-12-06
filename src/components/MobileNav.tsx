@@ -77,7 +77,8 @@ const MobileNav = () => {
                   onClick={() => setOpen(false)}
                 >
                   <Search size={24} />
-                  <span>Search</span>
+                  <span>Search</span> 
+                  
                 </Link>
                 <Link 
                   to="/library" 
