@@ -248,9 +248,9 @@ const Sidebar = () => {
           </Link>
         </div>
         <div className="mt-2 text-xs text-neutral-600">
-          © 2025 TuneVerse
+          © 2026 TuneVerse
         </div>
-      </div>
+      </div>. 
     </div>
   );
 };
