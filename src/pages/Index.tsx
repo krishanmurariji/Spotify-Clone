@@ -7,7 +7,7 @@ import MobileNav from "@/components/MobileNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchAllSongs } from "@/services/songService";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Play, Heart, Clock } from "lucide-react";
+import { Loader2, Play, Pause, Heart, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
