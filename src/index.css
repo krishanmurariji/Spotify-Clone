@@ -3,37 +3,43 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 230 15% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 230 15% 11%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 230 15% 11%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 142 72% 29%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 0 75% 65%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 230 12% 16%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 230 10% 18%;
+    --muted-foreground: 230 10% 55%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 230 12% 20%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142 72% 29%;
+    --border: 230 12% 18%;
+    --input: 230 12% 18%;
+    --ring: 0 75% 65%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    --sidebar-bg: 230 18% 6%;
+    --player-bg: 230 15% 10%;
+    --surface-hover: 230 12% 20%;
   }
 }
 
@@ -43,26 +49,62 @@
   }
 
   body {
-    @apply bg-spotify-dark text-spotify-text;
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
   }
 }
 
-/* Custom classes for our app */
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
 @layer components {
   .music-player-gradient {
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+    background: linear-gradient(to top, hsl(var(--player-bg)) 0%, transparent 100%);
   }
-  
+
   .album-hover-effect {
-    @apply transition-all duration-300 hover:scale-105 hover:shadow-lg;
+    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
   }
-  
+
   .progress-bar-container {
     @apply w-full h-1 bg-secondary rounded-full overflow-hidden;
   }
-  
+
   .progress-bar {
-    @apply h-full bg-spotify transition-all duration-100;
+    @apply h-full bg-primary transition-all duration-100;
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .song-row {
+    @apply flex items-center gap-4 px-4 py-3 rounded-lg transition-colors;
+  }
+
+  .song-row:hover {
+    background: hsl(var(--surface-hover));
   }
 }

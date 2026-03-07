@@ -1,7 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,28 +18,41 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, resetLink }: PasswordResetRequest = await req.json();
 
-    const emailResponse = await resend.emails.send({
-      from: "TuneVerse <mrkrishanmurariji@gmail.com>",
-      to: [email],
-      subject: "Reset Your Password - TuneVerse",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #1DB954;">Password Reset Request</h1>
-          <p>We received a request to reset your password for your TuneVerse account.</p>
-          <p>Click the button below to reset your password:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetLink}" style="background-color: #1DB954; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; display: inline-block;">Reset Password</a>
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "TuneVerse <mrkrishanmurariji@gmail.com>",
+        to: [email],
+        subject: "Reset Your Password - TuneVerse",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #1DB954;">Password Reset Request</h1>
+            <p>We received a request to reset your password for your TuneVerse account.</p>
+            <p>Click the button below to reset your password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}" style="background-color: #1DB954; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; display: inline-block;">Reset Password</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #666;">${resetLink}</p>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request a password reset, please ignore this email.</p>
+            <p>Best regards,<br>The TuneVerse Team</p>
           </div>
-          <p>Or copy and paste this link into your browser:</p>
-          <p style="word-break: break-all; color: #666;">${resetLink}</p>
-          <p>This link will expire in 1 hour.</p>
-          <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
-          <p>Best regards,<br>The TuneVerse Team</p>
-        </div>
-      `,
+        `,
+      }),
     });
 
-    console.log("Password reset email sent successfully:", emailResponse);
+    const data = await res.json();
+    console.log("Password reset email sent:", data);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

@@ -1,31 +1,11 @@
-
 import React from "react";
 import { Slider } from "@/components/ui/slider";
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Volume2, 
-  VolumeX 
-} from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePlayer, Song } from "@/contexts/PlayerContext";
+import { usePlayer } from "@/contexts/PlayerContext";
 
 const MusicPlayer = () => {
-  const { 
-    currentSong, 
-    isPlaying, 
-    progress, 
-    volume,
-    play, 
-    pause, 
-    resume, 
-    setVolume, 
-    seek, 
-    next, 
-    previous 
-  } = usePlayer();
+  const { currentSong, isPlaying, progress, volume, pause, resume, setVolume, seek, next, previous } = usePlayer();
 
   if (!currentSong) return null;
 
@@ -36,56 +16,47 @@ const MusicPlayer = () => {
   };
 
   const currentTimeInSeconds = (currentSong.duration * progress) / 100;
-  
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-black to-black/90 p-2 backdrop-blur-md">
-      <div className="flex items-center justify-between max-w-screen-xl mx-auto">
-        <div className="flex items-center gap-x-4 w-1/4">
-          <div className="relative h-14 w-14 rounded overflow-hidden">
-            <img 
-              src={currentSong.coverArt} 
-              alt={currentSong.title} 
-              className="object-cover h-full w-full"
-            />
+    <div className="fixed bottom-0 left-0 right-0 bg-player-bg/95 backdrop-blur-xl border-t border-border/50 px-4 py-2.5 z-50">
+      <div className="flex items-center justify-between max-w-screen-xl mx-auto gap-4">
+        {/* Song Info */}
+        <div className="flex items-center gap-x-3 w-1/4 min-w-0">
+          <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
+            <img src={currentSong.coverArt} alt={currentSong.title} className="object-cover h-full w-full" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium truncate">{currentSong.title}</span>
-            <span className="text-xs text-neutral-400">{currentSong.artist}</span>
+          <div className="min-w-0">
+            <span className="text-sm font-medium truncate block text-foreground">{currentSong.title}</span>
+            <span className="text-xs text-muted-foreground truncate block">{currentSong.artist}</span>
           </div>
         </div>
-        
+
+        {/* Controls */}
         <div className="flex flex-col items-center max-w-lg w-2/4">
-          <div className="flex items-center gap-x-4">
-            <Button
-              onClick={previous}
-              variant="ghost"
-              size="icon"
-              className="text-neutral-400 hover:text-white transition"
-            >
-              <SkipBack size={20} />
+          <div className="flex items-center gap-x-3">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <Shuffle size={16} />
             </Button>
-            
+            <Button onClick={previous} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <SkipBack size={18} />
+            </Button>
             <Button
               onClick={isPlaying ? pause : resume}
-              variant="secondary"
               size="icon"
-              className="rounded-full bg-white text-black hover:scale-105 transition"
+              className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition"
             >
-              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
             </Button>
-            
-            <Button
-              onClick={next}
-              variant="ghost"
-              size="icon"
-              className="text-neutral-400 hover:text-white transition"
-            >
-              <SkipForward size={20} />
+            <Button onClick={next} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <SkipForward size={18} />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <Repeat size={16} />
             </Button>
           </div>
-          
-          <div className="flex items-center gap-x-2 w-full mt-2">
-            <span className="text-xs text-neutral-400 w-10 text-right">
+
+          <div className="flex items-center gap-x-2 w-full mt-1.5">
+            <span className="text-[11px] text-muted-foreground w-10 text-right tabular-nums">
               {formatTime(currentTimeInSeconds)}
             </span>
             <Slider
@@ -95,22 +66,22 @@ const MusicPlayer = () => {
               onValueChange={(values) => seek(values[0])}
               className="cursor-pointer"
             />
-            <span className="text-xs text-neutral-400 w-10">
+            <span className="text-[11px] text-muted-foreground w-10 tabular-nums">
               {formatTime(currentSong.duration)}
             </span>
           </div>
         </div>
-        
+
+        {/* Volume */}
         <div className="flex items-center gap-x-2 w-1/4 justify-end">
           <Button
             onClick={() => setVolume(volume === 0 ? 0.5 : 0)}
             variant="ghost"
             size="icon"
-            className="text-neutral-400 hover:text-white transition"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
           >
-            {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </Button>
-          
           <Slider
             value={[volume * 100]}
             max={100}
