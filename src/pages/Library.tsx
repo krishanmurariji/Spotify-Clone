@@ -4,36 +4,36 @@ import MobileNav from "@/components/MobileNav";
 import MusicPlayer from "@/components/MusicPlayer";
 import { usePlayer, Song } from "@/contexts/PlayerContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { PlayCircle, Pause, Music, Loader2, Edit, Trash2 } from "lucide-react";
+import { Play, Pause, Music, Loader2, Edit, Trash2, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchUserSongs, deleteSong } from "@/services/songService";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Library = () => {
   const { songsList, currentSong, isPlaying, play, pause, resume } = usePlayer();
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const [userSongs, setUserSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hoveredSong, setHoveredSong] = useState<string | null>(null);
-  
-  // Check authentication
+
   useEffect(() => {
     if (!isAuthenticated && user === null) {
       const timer = setTimeout(() => {
-        if (!isAuthenticated) {
-          navigate("/login");
-        }
+        if (!isAuthenticated) navigate("/login");
       }, 1000);
-      
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, user, navigate]);
-  
-  // Load user's songs when authenticated
+
   useEffect(() => {
     const loadUserSongs = async () => {
       if (isAuthenticated && user) {
@@ -43,27 +43,22 @@ const Library = () => {
           setUserSongs(songs);
         } catch (error) {
           console.error("Error fetching user songs:", error);
-          toast({
-            variant: "destructive",
-            title: "Error loading songs",
-            description: "Could not load your songs from the server",
-          });
+          toast({ variant: "destructive", title: "Error loading songs", description: "Could not load your songs" });
         } finally {
           setLoading(false);
         }
       }
     };
-    
     loadUserSongs();
   }, [isAuthenticated, user, toast]);
-    
+
   const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-  
+
   const handlePlayPause = (song: Song) => {
     if (currentSong?.id === song.id) {
       isPlaying ? pause() : resume();
@@ -81,190 +76,152 @@ const Library = () => {
       try {
         await deleteSong(songId);
         setUserSongs(userSongs.filter(song => song.id !== songId));
-        toast({
-          title: "Song Deleted",
-          description: "The song has been removed successfully",
-        });
+        toast({ title: "Song Deleted", description: "The song has been removed successfully" });
       } catch (error) {
         console.error("Error deleting song:", error);
-        toast({
-          variant: "destructive",
-          title: "Delete Failed",
-          description: "Could not delete the song. Please try again.",
-        });
+        toast({ variant: "destructive", title: "Delete Failed", description: "Could not delete the song." });
       }
     }
   };
 
   return (
-    <div className="flex h-full min-h-screen bg-gradient-to-b from-gray-900 to-black">
+    <div className="flex h-full min-h-screen bg-background">
       <Sidebar />
-      
       <MobileNav />
-      
-      <div className="flex-1 overflow-y-auto px-2 pb-24 md:px-8 mt-14 md:mt-0">
-        <div className="pt-8 md:pt-16">
-          <h1 className="text-3xl font-bold mb-6">Your Library</h1>
-          
+
+      <div className="flex-1 overflow-y-auto pb-24 mt-14 md:mt-0">
+        <div className="px-4 md:px-8 pt-6 md:pt-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-display font-bold text-foreground">Your Library</h1>
+            <Link to="/upload">
+              <Button size="sm" className="bg-primary text-primary-foreground hover:opacity-90 rounded-full px-5">
+                Upload Music
+              </Button>
+            </Link>
+          </div>
+
           {isAuthenticated ? (
             <>
-              <div className="mb-10">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold">Your Uploads</h2>
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : userSongs.length === 0 ? (
+                <div className="rounded-2xl bg-card border border-border/50 p-12 text-center">
+                  <Music size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-display font-semibold mb-2 text-foreground">No uploaded songs yet</h3>
+                  <p className="text-muted-foreground mb-6">Start building your collection</p>
                   <Link to="/upload">
-                    <Button variant="outline" size="sm">
-                      Upload Music
+                    <Button className="bg-primary text-primary-foreground hover:opacity-90 rounded-full px-6">
+                      Upload Your First Song
                     </Button>
                   </Link>
                 </div>
-                
-                {loading ? (
-                  <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-spotify" />
+              ) : (
+                <div className="rounded-2xl bg-card border border-border/50 overflow-hidden">
+                  {/* Table header */}
+                  <div className="flex items-center px-4 py-3 border-b border-border/50 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    <div className="flex-1">Title</div>
+                    <div className="w-40 hidden md:block">Artist</div>
+                    <div className="w-40 hidden lg:block">Album</div>
+                    <div className="w-20 text-center">Actions</div>
                   </div>
-                ) : userSongs.length === 0 ? (
-                  <div className="bg-neutral-900/50 rounded-lg p-8 text-center">
-                    <Music size={48} className="mx-auto mb-4 text-neutral-400" />
-                    <h3 className="text-xl font-medium mb-2">No uploaded songs yet</h3>
-                    <p className="text-neutral-400 mb-6">Start building your collection by uploading your first song</p>
-                    <Link to="/upload">
-                      <Button className="bg-spotify hover:bg-spotify-light">
-                        Upload Your First Song
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="bg-neutral-900/50 rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-neutral-800 text-neutral-400 text-sm">
-                          <th className="px-4 py-3 text-left font-medium">Song</th>
-                          <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Artist</th>
-                          <th className="px-4 py-3 text-left font-medium hidden lg:table-cell">Album</th>
-                          <th className="px-4 py-3 text-center font-medium">Duration</th>
-                          <th className="px-4 py-3 text-center font-medium">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {userSongs.map((song) => (
-                          <tr 
-                            key={song.id} 
-                            className="border-b border-neutral-800 hover:bg-neutral-800/50 transition-colors group"
-                            onMouseEnter={() => setHoveredSong(song.id)}
-                            onMouseLeave={() => setHoveredSong(null)}
-                          >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-x-3">
-                                <div className="relative h-10 w-10 rounded overflow-hidden flex-shrink-0">
-                                  <img 
-                                    src={song.coverArt} 
-                                    alt={song.title}
-                                    className="object-cover h-full w-full"
-                                  />
-                                  {hoveredSong === song.id && (
-                                    <button
-                                      onClick={() => handlePlayPause(song)}
-                                      className="absolute inset-0 bg-black/60 flex items-center justify-center text-white"
-                                    >
-                                      {currentSong?.id === song.id && isPlaying ? (
-                                        <Pause size={20} />
-                                      ) : (
-                                        <PlayCircle size={20} />
-                                      )}
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="font-medium truncate">{song.title}</div>
-                                  <div className="text-sm text-neutral-400 truncate md:hidden">{song.artist}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-neutral-400 hidden md:table-cell">
-                              {song.artist}
-                            </td>
-                            <td className="px-4 py-3 text-neutral-400 hidden lg:table-cell">
-                              {song.album || '-'}
-                            </td>
-                            <td className="px-4 py-3 text-neutral-400 text-center">
-                              {formatTime(song.duration)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(song)}
-                                  className="h-8 w-8 p-0 hover:text-spotify"
-                                >
-                                  <Edit size={16} />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(song.id)}
-                                  className="h-8 w-8 p-0 hover:text-red-500"
-                                >
-                                  <Trash2 size={16} />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-12">
-                <h2 className="text-2xl font-bold mb-6">Recently Played</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {songsList.slice(0, 6).map((song) => (
-                    <div key={song.id} className="bg-neutral-800/50 p-3 rounded-md hover:bg-neutral-800 transition-colors group">
-                      <div className="relative aspect-square w-full overflow-hidden rounded-md mb-3">
-                        <img 
-                          src={song.coverArt} 
-                          alt={song.title}
-                          className="object-cover h-full w-full"
-                        />
-                        <button
+                  {/* Song rows */}
+                  {userSongs.map((song) => (
+                    <div
+                      key={song.id}
+                      className="flex items-center px-4 py-3 border-b border-border/30 last:border-b-0 hover:bg-accent/50 transition-colors group"
+                    >
+                      <div className="flex-1 flex items-center gap-3 min-w-0">
+                        <div
+                          className="relative h-10 w-10 rounded-md overflow-hidden flex-shrink-0 cursor-pointer"
                           onClick={() => handlePlayPause(song)}
-                          className="absolute bottom-2 right-2 h-10 w-10 flex items-center justify-center rounded-full bg-spotify opacity-0 group-hover:opacity-100 hover:scale-105 transition-all"
                         >
-                          {currentSong?.id === song.id && isPlaying ? (
-                            <Pause className="text-black" size={20} />
-                          ) : (
-                            <PlayCircle className="text-black" size={20} />
-                          )}
-                        </button>
+                          <img src={song.coverArt} alt={song.title} className="object-cover h-full w-full" />
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {currentSong?.id === song.id && isPlaying ? (
+                              <Pause size={16} className="text-white" />
+                            ) : (
+                              <Play size={16} className="text-white ml-0.5" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className={`text-sm font-medium truncate ${currentSong?.id === song.id ? 'text-primary' : 'text-foreground'}`}>
+                            {song.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate md:hidden">{song.artist}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium truncate">{song.title}</div>
-                        <div className="text-sm text-neutral-400 truncate">{song.artist}</div>
+                      <div className="w-40 text-sm text-muted-foreground truncate hidden md:block">{song.artist}</div>
+                      <div className="w-40 text-sm text-muted-foreground truncate hidden lg:block">{song.album || '—'}</div>
+                      <div className="w-20 flex justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-card border-border">
+                            <DropdownMenuItem onClick={() => handleEdit(song)} className="cursor-pointer gap-2">
+                              <Edit size={14} /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(song.id)}
+                              className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 size={14} /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
+
+              {/* Recently Played */}
+              {songsList.length > 0 && (
+                <div className="mt-10">
+                  <h2 className="text-lg font-display font-semibold text-foreground mb-4">Recently Played</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    {songsList.slice(0, 6).map((song) => (
+                      <div
+                        key={song.id}
+                        className="bg-card p-3 rounded-xl hover:bg-accent transition-colors group cursor-pointer"
+                        onClick={() => handlePlayPause(song)}
+                      >
+                        <div className="relative aspect-square w-full overflow-hidden rounded-lg mb-2.5">
+                          <img src={song.coverArt} alt={song.title} className="object-cover h-full w-full" />
+                          <div className="absolute bottom-2 right-2 h-9 w-9 flex items-center justify-center rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-all shadow-lg">
+                            {currentSong?.id === song.id && isPlaying ? (
+                              <Pause className="text-primary-foreground" size={16} />
+                            ) : (
+                              <Play className="text-primary-foreground ml-0.5" size={16} />
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium truncate text-foreground">{song.title}</div>
+                        <div className="text-xs text-muted-foreground truncate mt-0.5">{song.artist}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
-            <div className="bg-neutral-900/50 rounded-lg p-8 text-center">
-              <h3 className="text-xl font-medium mb-2">Log in to see your library</h3>
-              <p className="text-neutral-400 mb-6">Create and manage your music collection</p>
+            <div className="rounded-2xl bg-card border border-border/50 p-12 text-center">
+              <h3 className="text-xl font-display font-semibold mb-2 text-foreground">Log in to see your library</h3>
+              <p className="text-muted-foreground mb-6">Create and manage your music collection</p>
               <div className="flex gap-4 justify-center">
-                <Link to="/login">
-                  <Button variant="outline">Log In</Button>
-                </Link>
-                <Link to="/signup">
-                  <Button className="bg-spotify hover:bg-spotify-light">Sign Up</Button>
-                </Link>
+                <Link to="/login"><Button variant="outline">Log In</Button></Link>
+                <Link to="/signup"><Button className="bg-primary text-primary-foreground">Sign Up</Button></Link>
               </div>
             </div>
           )}
         </div>
       </div>
-      
+
       <MusicPlayer />
     </div>
   );

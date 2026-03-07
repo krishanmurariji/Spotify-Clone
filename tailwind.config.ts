@@ -19,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['DM Sans', 'sans-serif'],
+				display: ['Space Grotesk', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -53,13 +57,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// Custom colors for music app
-				spotify: {
-					DEFAULT: '#1DB954',
-					dark: '#191414',
-					light: '#1ED760',
-					gray: '#333333',
-					text: '#FFFFFF'
+				sidebar: {
+					bg: 'hsl(var(--sidebar-bg))',
+				},
+				player: {
+					bg: 'hsl(var(--player-bg))',
+				},
+				surface: {
+					hover: 'hsl(var(--surface-hover))',
 				}
 			},
 			borderRadius: {
@@ -69,20 +74,12 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
 				},
 				'pulse-opacity': {
 					'0%, 100%': { opacity: '1' },
